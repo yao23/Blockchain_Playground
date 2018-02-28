@@ -1,0 +1,8 @@
+cloudcoin/.idea/*
+cloudcoin/*.txt
+cloudcoin/cmake-build-debug/*
+CMakeFiles/*
+CTestTestfile.cmake
+Makefile
+cmake_install.cmake
+eosiocpp
