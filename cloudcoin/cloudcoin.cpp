@@ -19,6 +19,10 @@ extern "C" {
             eosio::print( "Smart Contract: ", eosio::name(contrac_name), "\n" );
         }
 
+        if (action == N(${action_name})) {
+            //your handler to respond to a particular action
+            eosio::print( "Action: ", eosio::name(action_name), "\n" );
+        }
     }
 
 } // extern "C"
