@@ -3,6 +3,11 @@
  *  @copyright defined in eos/LICENSE.txt
  */
 #include <cloudcoin.hpp>
+#include <eoslib/eos.hpp>
+#include <eoslib/token.hpp>
+#include <eoslib/generic_currency.hpp>
+
+typedef eosio::generic_currency<eosio::token<N(cloudcoin), S(10, CCH)> >cloud_coin;
 
 /**
  *  The init() and apply() methods must have C calling convention so that the blockchain can lookup and
@@ -31,6 +36,7 @@ extern "C" {
             eosio::print( "Action: ", eosio::name(action_name), "\n" );
         }
 */
+        cloud_coin::apply(code, action);
     }
 
 } // extern "C"
