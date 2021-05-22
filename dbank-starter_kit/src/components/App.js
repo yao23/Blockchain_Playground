@@ -76,6 +76,33 @@ class App extends Component {
     }
   }
 
+  async borrow(amount) {
+    //check if this.state.dbank is ok
+    if (this.state.dbank !== 'undefined') {
+      try { //in try block call dBank borrow();
+        await this.state.dbank.methods.borrow().send({value: amount.toString(), from: this.state.account})
+      } catch (e) {
+        console.log('Error, borrow: ', e)
+      }
+    }
+  }
+
+  async payOff(e) {
+    //prevent button from default click
+    e.preventDefault()
+    //check if this.state.dbank is ok
+    if (this.state.dbank !== 'undefined') {
+      try { //in try block call dBank payOff();
+        const collateralEther = await this.state.dbank.methods.collateralEther(this.state.account).call({from: this.state.account})
+        const tokenBorrowed  = collateralEther / 2
+        await this.state.token.methods.approve(this.state.dBankAddress, tokenBorrowed.toString()).send({from: this.state.account})
+        await this.state.dbank.methods.payOff().send({from: this.state.account})
+      } catch (e) {
+        console.log('Error, pay off: ', e)
+      }
+    }
+  }
+
   constructor(props) {
     super(props)
     this.state = {
@@ -150,7 +177,52 @@ class App extends Component {
                     <br></br>
                   </div>
                   <div> 
-                      <button type='submit' className='btn btn-primary' onClick={(e) => {this.withdraw(e)}}>Withdraw</button>
+                      <button type='submit' className='btn btn-primary' onClick={(e) => {this.withdraw(e)}}>WITHDRAW</button>
+                  </div>
+                </Tab>
+                <Tab eventKey="borrow" title="Borrow">
+                  <div>
+                    <br></br>
+                    Do you want to borrow tokens?
+                    <br></br>
+                    (You'll get 50% of collateral, in Tokens)
+                    <br></br>
+                    Type collateral amount (in ETH)
+                    <br></br>
+                    <br></br>
+                    <form onSubmit = {(e => {
+                      e.preventDefault()
+                      let amount = this.borrowAmount.value
+                      amount = amount * 10**18 // convert to wei
+                      this.borrow(amount)
+                    })}>
+                      <div className='form-group mr-sm-2'>
+                        <br></br>
+                        <input
+                          id='borrowAmount'
+                          step="0.01"
+                          type='number'
+                          className='form-control form-control-md'
+                          placeholder='amount...'
+                          required
+                          ref={(input) => { this.borrowAmount = input }}
+                        />
+                      </div>
+                      <button type='submit' className='btn btn-primary'>BORROW</button>
+                    </form>
+                  </div>
+                </Tab>
+                <Tab eventKey="payOff" title="PayOff">
+                  <div>
+                    <br></br>
+                    Do you want to payoff the loan?
+                    <br></br>
+                    (You'll receive your collateral - fee)
+                    <br></br>
+                    <br></br>
+                  </div>
+                  <div> 
+                      <button type='submit' className='btn btn-primary' onClick={(e) => {this.payOff(e)}}>PAYOFF</button>
                   </div>
                 </Tab>
               </Tabs>
