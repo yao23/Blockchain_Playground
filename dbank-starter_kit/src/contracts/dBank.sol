@@ -11,11 +11,16 @@ contract dBank {
   //add mappings
   mapping(address => uint) public etherBalanceOf;
   mapping(address => uint) public depositStart;
+  mapping(address => uint) public collateralEther;
+  
   mapping(address => bool) public isDeposited;
+  mapping(address => bool) public isBorrowed;
 
   //add events
   event Deposit(address indexed user, uint etherAmount, uint timeStart);
   event Withdraw(address indexed user, uint etherAmount, uint depositTime, uint interest);
+  event Borrow(address indexed user, uint collateralEtherAmount, uint borrowedTokenAmount);
+  event PayOff(address indexed user, uint fee);
 
   //pass as constructor argument deployed Token contract
   constructor(Token _token) public {
@@ -80,29 +85,44 @@ contract dBank {
 
   function borrow() payable public {
     //check if collateral is >= than 0.01 ETH
+    require(msg.value >= 1e16, 'Error, collateral must be >= 0.01 ETH');
     //check if user doesn't have active loan
+    require(isBorrowed[msg.sender] == false, 'Error, loan already taken');
 
     //add msg.value to ether collateral
+    collateralEther[msg.sender] = collateralEther[msg.sender] + msg.value;
 
     //calc tokens amount to mint, 50% of msg.value
+    uint tokensToMint = collateralEther[msg.sender] / 2;
 
     //mint&send tokens to user
+    token.mint(msg.sender, tokensToMint);
 
     //activate borrower's loan status
+    isBorrowed[msg.sender] = true;
 
     //emit event
+    emit Borrow(msg.sender, collateralEther[msg.sender], tokensToMint);
   }
 
   function payOff() public {
     //check if loan is active
-    //transfer tokens from user back to the contract
+    require(isBorrowed[msg.sender] == true, 'Error, loan not active');
 
-    //calc fee
+    //transfer tokens from user back to the contract
+    require(token.transferFrom(msg.sender, address(this), collateralEther[msg.sender] / 2), "Error, can't receive tokens"); // must approve dBank first
+
+    //calc 10% fee
+    uint fee = collateralEther[msg.sender] / 10;
 
     //send user's collateral minus fee
+    msg.sender.transfer(collateralEther[msg.sender] - fee);
 
     //reset borrower's data
+    collateralEther[msg.sender] = 0;
+    isBorrowed[msg.sender] = false;
 
     //emit event
+    emit PayOff(msg.sender, fee);
   }
 }
